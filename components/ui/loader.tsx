@@ -1,5 +1,6 @@
 "use client";
 
+
 export function Loader() {
     return (
         <div className="flex flex-col gap-4 items-center justify-center bg-black/20 backdrop-blur-md h-screen">

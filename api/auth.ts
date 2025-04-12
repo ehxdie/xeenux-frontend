@@ -28,7 +28,7 @@ export const loginUser = async (data: {
 };
 
 // Refresh token
-export const refreshToken = async (data: { refreshToken: string }) => {
+export const refreshToken = async (data: { refreshToken: string | null }) => {
     const response = await apiClient.post("/auth/refresh-token", data);
     return response.data;
 };
