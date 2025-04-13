@@ -174,10 +174,13 @@ export default function RegisterPage() {
                 position: formData.position === "left" ? 0 : 1
             };
 
-            await registerUser(registrationData);
+            const response = await registerUser(registrationData);
+            console.log('Registration response:', response);
             notification.success("Registration successful! Please login to continue.");
             router.push('/login');
         } catch (error: any) {
+            console.error('Registration error:', error);
+            console.error('Error response:', error?.response);
             notification.error(error?.response?.data?.message || "Registration failed. Please try again.");
         } finally {
             setIsLoading(false);
