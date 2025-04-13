@@ -22,6 +22,8 @@ import {
 import SelectPackage from "@/components/ui/select-package";
 import { strictEmailRegex } from "@/lib/utils";
 import { notification } from "@/utils/scaffold-eth/notification";
+import { registerUser } from "@/api/auth";
+import { useRouter } from "next/navigation";
 
 // Country codes data
 const countryCodes = [
@@ -100,15 +102,18 @@ function CountryCodeSelect({
 }
 
 export default function RegisterPage() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         name: "",
         email: "",
         phoneNumber: "",
         countryCode: "+1",
         position: "left" as "left" | "right",
-        package: 0,
+        password: "",
+        walletAddress: "",
         ref: 0,
     });
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -128,12 +133,15 @@ export default function RegisterPage() {
         }));
     };
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
 
         const fullPhoneNumber = `${formData.countryCode}${formData.phoneNumber.replace(/\D/g, "")}`;
 
+        // Validation checks
         if (formData.name.trim().length === 0) {
+            setIsLoading(false);
             return notification.error("Name is required");
         }
         if (formData.name.length > 30) {
@@ -151,24 +159,39 @@ export default function RegisterPage() {
         if (fullPhoneNumber.length > 15) {
             return notification.error("Phone number must be 15 characters or less");
         }
+        if (!formData.password) {
+            return notification.error("Password is required");
+        }
 
-        // Handle the registration (e.g., send to a backend API)
-        console.log("Registering with data:", {
-            ...formData,
-            phoneNumber: fullPhoneNumber,
-        });
+        try {
+            const registrationData = {
+                name: formData.name,
+                email: formData.email,
+                phone: fullPhoneNumber,
+                password: formData.password,
+                walletAddress: formData.walletAddress || "", // If empty, send empty string
+                referrerId: formData.ref,
+                position: formData.position === "left" ? 0 : 1
+            };
 
-        notification.success("Registration submitted (simulated)");
+            await registerUser(registrationData);
+            notification.success("Registration successful! Please login to continue.");
+            router.push('/login');
+        } catch (error: any) {
+            notification.error(error?.response?.data?.message || "Registration failed. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <div className="min-h-screen px-2 py-2 bg-gradient-to-b from-[#12021c] to-[#1a0329]">
-            <div className="container mx-auto py-8">
+        <div className="h-screen bg-gradient-to-b from-[#12021c] to-[#1a0329] flex items-center">
+            <div className="container mx-auto">
                 <Card className="md:glass-card border-none w-full md:max-w-7xl mx-auto p-4">
-                    <h1 className="text-4xl font-bold text-center mb-12 gradient-text">Join now</h1>
+                    <h1 className="text-3xl font-bold text-center mb-6 gradient-text">Join now</h1>
                     <form onSubmit={handleSubmit}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                            <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
                                 <div>
                                     <Label className="mb-2">Name</Label>
                                     <Input
@@ -210,6 +233,26 @@ export default function RegisterPage() {
                                     </div>
                                 </div>
                                 <div>
+                                    <Label className="mb-2">Password</Label>
+                                    <Input
+                                        type="password"
+                                        placeholder="Enter your password"
+                                        className="glass-card"
+                                        value={formData.password}
+                                        onChange={handleInputChange("password")}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="mb-2">Wallet Address (Optional)</Label>
+                                    <Input
+                                        placeholder="Enter your wallet address"
+                                        className="glass-card"
+                                        value={formData.walletAddress}
+                                        onChange={handleInputChange("walletAddress")}
+                                    />
+                                </div>
+                                <div>
                                     <Label className="mb-4 block">Choose position</Label>
                                     <RadioGroup
                                         value={formData.position}
@@ -241,12 +284,13 @@ export default function RegisterPage() {
                             />
                         </div>
 
-                        <div className="flex justify-center mt-8">
+                        <div className="flex justify-center mt-6">
                             <Button
                                 type="submit"
+                                disabled={isLoading}
                                 className="bg-purple-500 rounded-xl h-12 font-semibold w-48 hover:bg-purple-500/80"
                             >
-                                Register
+                                {isLoading ? "Registering..." : "Register"}
                             </Button>
                         </div>
                     </form>
