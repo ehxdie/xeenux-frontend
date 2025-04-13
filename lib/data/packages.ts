@@ -1,4 +1,10 @@
-export const packages = [
+interface Package {
+    label: string;
+    value: number;
+}
+
+
+export const Packages: Package[] = [
     { value: 0, label: '$2.5' },
     { value: 1, label: '$5' },
     { value: 2, label: '$10' },
