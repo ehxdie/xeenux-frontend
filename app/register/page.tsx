@@ -287,7 +287,7 @@ export default function RegisterPage() {
                             />
                         </div>
 
-                        <div className="flex justify-center mt-6">
+                        <div className="flex flex-col items-center mt-6 gap-4">
                             <Button
                                 type="submit"
                                 disabled={isLoading}
@@ -295,6 +295,12 @@ export default function RegisterPage() {
                             >
                                 {isLoading ? "Registering..." : "Register"}
                             </Button>
+                            <p className="text-gray-400">
+                                Already registered?{" "}
+                                <a href="/login" className="text-purple-500 hover:text-purple-400">
+                                    Login
+                                </a>
+                            </p>
                         </div>
                     </form>
                 </Card>
