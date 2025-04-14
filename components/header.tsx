@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { RainbowKitCustomConnectButton } from './scaffold-eth'
+
 
 export function Header() {
 
@@ -20,9 +20,6 @@ export function Header() {
             <span className="text-sm sm:text-xl font-bold gradient-text">XEENUX</span>
           </div>
           
-          <div className="flex items-center gap-4">
-            <RainbowKitCustomConnectButton />
-          </div>
         </div>
       </div>
     </header>
