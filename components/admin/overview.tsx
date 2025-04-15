@@ -1,14 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import {
-  useTotalTokensBurnt,
-  useTotalTurnover,
-  useTotalUsers,
-  useWeeklyTurnOver,
-} from "@/hooks/use-admin";
-import { useTokenInfo } from "@/hooks/use-contract";
-import { bigIntToString } from "@/lib/utils";
+import { useAdminDashboard } from "@/hooks/use-admin-dashboard";
 import {
   TrendingUp,
   Users,
@@ -29,7 +22,7 @@ const stats = [
   },
   {
     title: "Weekly Turnover",
-    value: "0 XEE",
+    value: "0 XNX",
     change: "+15.7%",
     icon: ArrowUpRight,
     color: "text-cyan-500",
@@ -37,23 +30,15 @@ const stats = [
   },
   {
     title: "Total Volume",
-    value: "0 XEE",
+    value: "0 XNX",
     change: "+12.5%",
     icon: TrendingUp,
     color: "text-green-500",
     key: "total-turnover",
   },
-  // {
-  //   title: "Total Fees",
-  //   value: "0 USDT",
-  //   change: "+5.4%",
-  //   icon: DollarSign,
-  //   color: "text-purple-500",
-  //   key: "total-fees",
-  // },
   {
     title: "Tokens Burned",
-    value: "0 XEE",
+    value: "0 XNX",
     change: "+2.3%",
     icon: Flame,
     color: "text-orange-500",
@@ -63,59 +48,51 @@ const stats = [
 
 export function AdminOverview() {
   const [overviewData, setOverviewData] = useState([...stats]);
-  const { data: totalUsers } = useTotalUsers();
-  const { data: weeklyTurnover } = useWeeklyTurnOver();
-  const { data: totalTurnover } = useTotalTurnover();
-  const { data: totalTokensBurnt } = useTotalTokensBurnt();
-  const { data: tokenInfo } = useTokenInfo();
+  const { data, isLoading } = useAdminDashboard();
+
   const setOverviewDataValue = useCallback(
     (key: string, value: string) => {
       setOverviewData((stats) => {
         const newStats = stats.map((stat) =>
-          stat.key === key ? { ...stat, value } : stat,
+          stat.key === key ? { ...stat, value } : stat
         );
         return newStats;
       });
     },
-    [], // Add the dependency if used inside the function
+    []
   );
+
   useEffect(() => {
-    if (totalUsers) {
-      setOverviewDataValue("total-users", totalUsers.toString());
-    }
-  }, [totalUsers, setOverviewDataValue]);
-  useEffect(() => {
-    if (weeklyTurnover) {
+    if (data) {
+      // Update total users
+      setOverviewDataValue("total-users", data.totalUsers.toString());
+
+      // Update weekly turnover
       setOverviewDataValue(
         "weekly-turnover",
-        bigIntToString(weeklyTurnover, tokenInfo?.decimals, 0) +
-          " " +
-          tokenInfo?.symbol,
+        `${data.weeklyTurnover} ${data.tokenInfo.symbol}`
       );
-    }
-  }, [weeklyTurnover, setOverviewDataValue, tokenInfo]);
-  useEffect(() => {
-    if (totalTurnover) {
+
+      // Update total volume
       setOverviewDataValue(
         "total-turnover",
-        bigIntToString(totalTurnover, tokenInfo?.decimals, 0) +
-          " " +
-          tokenInfo?.symbol,
+        `${data.totalTurnover} ${data.tokenInfo.symbol}`
       );
-    }
-  }, [totalTurnover, setOverviewDataValue, tokenInfo]);
-  useEffect(() => {
-    if (totalTokensBurnt) {
+
+      // Update tokens burned
       setOverviewDataValue(
         "total-burned",
-        bigIntToString(totalTokensBurnt, tokenInfo?.decimals, 0) +
-          " " +
-          tokenInfo?.symbol,
+        `${data.totalTokensBurnt} ${data.tokenInfo.symbol}`
       );
     }
-  }, [totalTokensBurnt, setOverviewDataValue, tokenInfo]);
+  }, [data, setOverviewDataValue]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3x xl:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
       {overviewData.map((stat, index) => (
         <Card
           key={index}
@@ -127,7 +104,10 @@ export function AdminOverview() {
               <p className="text-2xl font-bold mt-2 text-white">{stat.value}</p>
             </div>
             <div
-              className={`p-3 rounded-lg bg-opacity-20 ${stat.color.replace("text", "bg")}`}
+              className={`p-3 rounded-lg bg-opacity-20 ${stat.color.replace(
+                "text",
+                "bg"
+              )}`}
             >
               <stat.icon className={`w-6 h-6 ${stat.color}`} />
             </div>
