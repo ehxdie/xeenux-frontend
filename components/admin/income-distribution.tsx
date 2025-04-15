@@ -1,13 +1,9 @@
 import { Gift } from "lucide-react";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
-import { useEffect, useState } from "react";
-import {
-    useDistributeIncome,
-    useIncomeDistributionData,
-} from "@/hooks/use-admin";
-import { CountdownTimer } from "../ui/countdown-timer";
-import { formatDistanceToNow, formatDistance } from "date-fns"; // To format timestamps
+import { formatDistanceToNow } from "date-fns";
+import { useIncomeDistribution } from "@/hooks/use-income-distribution";
+
 const IncomeCard = ({
     targetDate = new Date(),
     distributeAction,
@@ -31,10 +27,6 @@ const IncomeCard = ({
             </div>
 
             <div className="space-y-4">
-                {/* <p className="text-sm text-gray-400">
-          Trigger the distribution of weekly bonuses to eligible users.
-        </p> */}
-
                 <div className="flex flex-col items-center justify-between gap-4">
                     <span className="text-sm text-gray-400">
                         {targetDate > new Date()
@@ -43,9 +35,6 @@ const IncomeCard = ({
                         {formatDistanceToNow(targetDate)}{" "}
                         {targetDate > new Date() ? "time" : "ago"}
                     </span>
-                    {/* <div className="w-full">
-            <CountdownTimer targetDate={targetDate} />
-          </div> */}
                     <Button
                         onClick={distributeAction}
                         disabled={isLoading}
@@ -58,61 +47,35 @@ const IncomeCard = ({
         </Card>
     );
 };
+
 export function IncomeDistribution() {
-    const [isLoading, setIsLoading] = useState(false);
-    const { data: incomeDistData, isLoading: isLoadingWeeklyLastDist } =
-        useIncomeDistributionData();
+    const { data, isLoading, distributeROI, distributeBinaryIncome } = useIncomeDistribution();
 
-    const { distributeROI, distributeBinaryIncome, distributeWeeklyReward } =
-        useDistributeIncome();
-    const handleDistributeROI = async () => {
-        await distributeROI();
-    };
-    const handleDistributeBinaryIncome = async () => {
-        await distributeBinaryIncome();
-    };
-    const handleDistributeWeeklyReward = async () => {
-        await distributeWeeklyReward();
-    };
+    if (!data) return null;
 
-    useEffect(() => {
-        console.log({ incomeDistData });
-    }, [incomeDistData]);
     return (
         <>
-            {/* <IncomeCard
-                name="ROI"
-                distributeAction={handleDistributeROI}
-                isLoading={isLoading}
-                targetDate={
-                    new Date(
-                        (Number(incomeDistData?.roiIncomeLastDist || 0) +
-                            Number(incomeDistData?.allIncomeDistTime || 0)) *
-                            1000,
-                    )
-                }
-            /> */}
             <IncomeCard
-                name="Weekly Reward"
-                distributeAction={handleDistributeWeeklyReward}
+                name="ROI"
+                distributeAction={distributeROI}
                 isLoading={isLoading}
                 targetDate={
                     new Date(
-                        (Number(incomeDistData?.weeklyRewardLastDist || 0) +
-                            Number(incomeDistData?.weeklyRewardDistTime || 0)) *
-                            1000,
+                        (Number(data.roiIncomeLastDist || 0) +
+                            Number(data.allIncomeDistTime || 0)) *
+                        1000
                     )
                 }
             />
             <IncomeCard
                 name="Binary Income"
-                distributeAction={handleDistributeBinaryIncome}
+                distributeAction={distributeBinaryIncome}
                 isLoading={isLoading}
                 targetDate={
                     new Date(
-                        (Number(incomeDistData?.binaryIncomeLastDist || 0) +
-                            Number(incomeDistData?.allIncomeDistTime || 0)) *
-                            1000,
+                        (Number(data.binaryIncomeLastDist || 0) +
+                            Number(data.allIncomeDistTime || 0)) *
+                        1000
                     )
                 }
             />
