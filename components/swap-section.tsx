@@ -4,29 +4,27 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp } from "lucide-react";
 import { TokenSelector } from "./swap/token-selector";
-import { SwapSettings } from "./swap/swap-settings";
 import { SwapDetails } from "./swap/swap-details";
-import { useUsdtBalance, useXeeBalance } from "@/hooks/use-contract";
-import { bigIntToString, formatAmount, stringToBigInt } from "@/lib/utils";
-import { useContractData } from "@/context/contract";
-import { useSwapFee, useSwapUsdtToXee, useSwapXeeToUsdt } from "@/hooks/use-swap";
-import { useAccount } from "wagmi";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { notification } from "@/utils/scaffold-eth";
+import { useAuth } from "@/context/auth-context";
+import { formatAmount } from "@/lib/utils";
+import { useSwap } from "@/hooks/use-swap";
+import { notification } from "@/utils/scaffold-eth/notification";
+
 interface Token {
   symbol: string;
   icon: string;
   balance: string;
   amount: string;
-  decimals: number | null;
+  decimals: number;
   isBalanceLoading: boolean;
 }
+
 const usdtToken: Token = {
   symbol: "USDT",
   icon: "/images/tether.svg",
   balance: "0",
   amount: "0",
-  decimals: 18, // USDT is always 18
+  decimals: 18,
   isBalanceLoading: true,
 };
 
@@ -35,279 +33,83 @@ const xeeToken: Token = {
   icon: "/images/xeenux.png",
   balance: "0",
   amount: "0",
-  decimals: null, // Will be updated when tokenInfo loads
+  decimals: 18,
   isBalanceLoading: true,
 };
-// Helper to handle decimal conversions between tokens
-function adjustDecimals(
-  amount: bigint,
-  inputDecimals: number,
-  outputDecimals: number
-): bigint {
-  const difference = outputDecimals - inputDecimals;
-  if (difference > 0) {
-    return amount * BigInt(10 ** difference);
-  } else if (difference < 0) {
-    return amount / BigInt(10 ** Math.abs(difference));
-  }
-  return amount;
-}
-
-// Convert USDT amount to XEE amount
-function calculateUsdtToXee(
-  usdtAmount: string,
-  swapPrice: bigint,
-  xeeDecimals: number
-): string {
-  try {
-    // Convert input amount to BigInt with USDT decimals (18)
-    const amountBigInt: bigint = stringToBigInt(usdtAmount, 18);
-
-    // First conversion step: amt * 1e18 / swapPrice
-    const initialConversion = (amountBigInt * BigInt(10 ** 18)) / swapPrice;
-
-    // Adjust decimals between tokens
-    const finalAmount = adjustDecimals(initialConversion, 18, xeeDecimals);
-
-    // Convert back to string for display
-    return bigIntToString(finalAmount, xeeDecimals);
-  } catch {
-    return "0";
-  }
-}
-
-// Convert XEE amount to USDT amount
-function calculateXeeToUsdt(
-  xeeAmount: string,
-  swapPrice: bigint,
-  xeeDecimals: number
-): string {
-  try {
-    // Convert input amount to BigInt with XEE decimals
-    const amountBigInt = stringToBigInt(xeeAmount, xeeDecimals);
-
-    // First conversion step: amt * swapPrice / 1e18
-    const initialConversion = (amountBigInt * swapPrice) / BigInt(10 ** 18);
-
-    // Adjust decimals between tokens
-    const finalAmount = adjustDecimals(initialConversion, xeeDecimals, 18);
-
-    // Convert back to string for display
-    return bigIntToString(finalAmount, 18);
-  } catch {
-    return "0";
-  }
-}
-function calculatePriceImpact(
-  originalPrice: number,
-  swapAmount: number,
-  swapUSDTLiquidity: number,
-  swapXeenuxLiquidity: number,
-  isBuying: boolean
-): number {
-  // Simulate the new liquidity state after swap
-  let newUSDTLiquidity = isBuying
-    ? swapUSDTLiquidity + swapAmount
-    : swapUSDTLiquidity - (swapAmount * originalPrice) / 1e18;
-  let newXeenuxLiquidity = isBuying
-    ? swapXeenuxLiquidity - (swapAmount * 1e18) / originalPrice
-    : swapXeenuxLiquidity + swapAmount;
-
-  // Calculate new price after the swap
-  let newPrice = (newUSDTLiquidity * 1e18) / newXeenuxLiquidity;
-
-  // Compute price impact %
-  let priceImpact = (1 - newPrice / originalPrice) * 100;
-
-  return Math.abs(priceImpact); // Ensure positive value
-}
 
 export function SwapSection() {
-  const { isConnected } = useAccount();
-  const { openConnectModal  } = useConnectModal();
+  const { isAuthenticated } = useAuth();
+  const { data, isLoading, swapStatus, executeSwap, refreshData } = useSwap();
   const [fromToken, setFromToken] = useState({ ...usdtToken });
   const [toToken, setToToken] = useState({ ...xeeToken });
-  const [slippage, setSlippage] = useState("0.5");
-  const {
-    data: xeeBalanceData,
-    queryKey: xeeBalanceKey,
-    refetch: refetchXeeBalance,
-  } = useXeeBalance();
-  const {
-    data: usdtBalanceData,
-    queryKey: usdtBalanceKey,
-    refetch: refetchUsdtBalance,
-  } = useUsdtBalance();
-  const { tokenInfo, swapPrice } = useContractData();
-  const { data: swapFee } = useSwapFee();
-  async function refetchTokenBalances() {
-    await refetchXeeBalance();
-    await refetchUsdtBalance();
-  }
-  const {
-    swap: swapUsdtToXee,
-    status: usdtToXeeStatus,
-    error: usdtToXeeError,
-  } = useSwapUsdtToXee();
-
-  const {
-    swap: swapXeeToUsdt,
-    status: xeeToUsdtStatus,
-    error: xeeToUsdtError,
-  } = useSwapXeeToUsdt();
-  useEffect(() => {
-    if (tokenInfo?.decimals !== undefined) {
-      setToToken((prev) => ({
-        ...prev,
-        decimals: tokenInfo.decimals,
-      }));
-    }
-  }, [tokenInfo?.decimals]);
-  useEffect(() => {
-    if (usdtBalanceData !== undefined) {
-      setFromToken((prev) => ({
-        ...prev,
-        balance: bigIntToString(usdtBalanceData, 18),
-        isBalanceLoading: false,
-      }));
-    }
-  }, [usdtBalanceData]);
 
   useEffect(() => {
-    if (xeeBalanceData !== undefined && tokenInfo?.decimals !== undefined) {
-      setToToken((prev) => ({
+    if (data) {
+      setFromToken(prev => ({
         ...prev,
-        balance: bigIntToString(xeeBalanceData, Number(tokenInfo.decimals)),
-        isBalanceLoading: false,
+        balance: data.balances.usdt.toString(),
+        isBalanceLoading: false
+      }));
+      setToToken(prev => ({
+        ...prev,
+        balance: data.balances.xee.toString(),
+        decimals: data.tokenInfo.decimals,
+        isBalanceLoading: false
       }));
     }
-  }, [xeeBalanceData, tokenInfo?.decimals]);
+  }, [data]);
+
   const handleSwapTokens = () => {
     const tempToken = { ...fromToken };
     setFromToken({ ...toToken });
     setToToken(tempToken);
   };
 
-  const swapStatus = useMemo(() => {
-    if (fromToken.symbol === "USDT") {
-      return usdtToXeeStatus;
-    }
-    return xeeToUsdtStatus;
-  }, [fromToken.symbol, usdtToXeeStatus, xeeToUsdtStatus]);
-
   const calculateOutputAmount = (inputAmount: string): string => {
-    if (!swapPrice || !tokenInfo?.decimals) return "0";
-
-    if (fromToken.symbol === "USDT") {
-      return calculateUsdtToXee(
-        inputAmount,
-        swapPrice,
-        Number(tokenInfo.decimals)
-      );
-    } else {
-      return calculateXeeToUsdt(
-        inputAmount,
-        swapPrice,
-        Number(tokenInfo.decimals)
-      );
-    }
+    if (!data?.swapInfo.price) return "0";
+    const amount = Number(inputAmount);
+    const fee = amount * (data.swapInfo.fee / 100);
+    return fromToken.symbol === "USDT"
+      ? ((amount - fee) * data.swapInfo.price).toString()
+      : ((amount - fee) / data.swapInfo.price).toString();
   };
 
-  const calculateInputAmount = (outputAmount: string): string => {
-    if (!swapPrice || !tokenInfo?.decimals) return "0";
-
-    if (toToken.symbol === "USDT") {
-      return calculateXeeToUsdt(
-        outputAmount,
-        swapPrice,
-        Number(tokenInfo.decimals)
-      );
-    } else {
-      return calculateUsdtToXee(
-        outputAmount,
-        swapPrice,
-        Number(tokenInfo.decimals)
-      );
-    }
-  };
   const handleAmountChange = (value: string, isFromToken: boolean) => {
     const formattedValue = formatAmount(value);
+
     if (isFromToken) {
-      setFromToken((prev) => ({ ...prev, amount: formattedValue }));
-      // Calculate output amount if both decimals are available
-      if (fromToken.decimals && toToken.decimals) {
-        const outputAmount = calculateOutputAmount(formattedValue);
-        setToToken((prev) => ({ ...prev, amount: outputAmount }));
-      }
+      setFromToken(prev => ({ ...prev, amount: formattedValue }));
+      const outputAmount = calculateOutputAmount(formattedValue);
+      setToToken(prev => ({ ...prev, amount: outputAmount }));
     } else {
-      setToToken((prev) => ({ ...prev, amount: formattedValue }));
-      // Calculate input amount if both decimals are available
-      if (fromToken.decimals && toToken.decimals) {
-        const inputAmount = calculateInputAmount(formattedValue);
-        setFromToken((prev) => ({ ...prev, amount: inputAmount }));
-      }
+      setToToken(prev => ({ ...prev, amount: formattedValue }));
+      const inputAmount = calculateOutputAmount(formattedValue);
+      setFromToken(prev => ({ ...prev, amount: inputAmount }));
     }
   };
 
   const canSwap = useMemo(() => {
-    const isLoading =
-      fromToken.isBalanceLoading ||
-      toToken.isBalanceLoading ||
-      swapStatus !== "idle";
+    if (!data || isLoading || swapStatus === 'processing') return false;
 
-    return (
-      !isLoading &&
-      fromToken.decimals !== null &&
-      toToken.decimals !== null &&
-      swapPrice !== undefined &&
-      fromToken.amount !== "0" &&
-      toToken.amount !== "0" &&
-      stringToBigInt(fromToken.amount, Number(fromToken.decimals)) <=
-        stringToBigInt(fromToken.balance, Number(fromToken.decimals))
-    );
-  }, [fromToken, toToken, swapPrice, swapStatus]);
+    const amount = Number(fromToken.amount);
+    const balance = Number(fromToken.balance);
 
-  const amountIsZero = useMemo(() => {
-    return fromToken.amount === "0" || toToken.amount === "0";
-  }, [fromToken, toToken]);
+    return amount > 0 && amount <= balance;
+  }, [data, fromToken, isLoading, swapStatus]);
 
   const handleSwap = async () => {
-    if (!canSwap || !fromToken.decimals) {
-      // notification.error("Cannot swap at this time");
-      return;
-    }
+    if (!canSwap) return;
+
     try {
-      const amount = stringToBigInt(
-        fromToken.amount,
-        Number(fromToken.decimals)
+      await executeSwap(
+        Number(fromToken.amount),
+        fromToken.symbol === "USDT" ? "usdt_to_xee" : "xee_to_usdt"
       );
 
-      if (fromToken.symbol === "USDT") {
-        await swapUsdtToXee(amount);
-        // notification.success("Successfully swapped USDT to XEE");
-      } else {
-        await swapXeeToUsdt(amount);
-        // notification.success("Successfully swapped XEE to USDT");
-      }
-
-      // Reset amounts
-      setFromToken((prev) => ({ ...prev, amount: "0" }));
-      setToToken((prev) => ({ ...prev, amount: "0" }));
-      await refetchTokenBalances();
+      setFromToken(prev => ({ ...prev, amount: "0" }));
+      setToToken(prev => ({ ...prev, amount: "0" }));
     } catch (error) {
       console.error("Swap failed:", error);
-      if (error instanceof Error) {
-        // Handle specific error messages
-        // if (error.message.includes("Wallet not connected")) {
-        //   toast.error("Please connect your wallet");
-        // } else if (error.message.includes("Insufficient")) {
-        //   toast.error(error.message);
-        // } else {
-        //   toast.error(error.message);
-        // }
-      } else {
-        notification.error("An unexpected error occurred");
-      }
     }
   };
 
@@ -338,31 +140,24 @@ export function SwapSection() {
           onAmountChange={(value) => handleAmountChange(value, false)}
         />
 
-        {/* <SwapSettings slippage={slippage} onSlippageChange={setSlippage} /> */}
-
         <div className="glass-card p-4">
           <SwapDetails
             amount={Number(toToken.amount)}
             symbol={toToken.symbol}
             priceImpact="< 0.01%"
-            swapFee={swapFee || BigInt(0)}
+            swapFee={data?.swapInfo.fee || 0}
           />
         </div>
 
         <Button
           className="w-full glass-button py-6 text-lg font-semibold"
-          disabled={isConnected && !canSwap}
-          onClick={isConnected ? handleSwap : openConnectModal}
+          disabled={!isAuthenticated || !canSwap || swapStatus === 'processing'}
+          onClick={handleSwap}
         >
-          {(() => {
-            if (!isConnected) return "Connect Wallet";
-            if (swapStatus === "approving") return "Approving...";
-            if (swapStatus === "swapping") return "Swapping...";
-            if (fromToken.isBalanceLoading || toToken.isBalanceLoading)
-              return "Loading balances...";
-            // if (!canSwap) return "Insufficient balance";
-            return "Swap Tokens";
-          })()}
+          {!isAuthenticated ? "Connect Wallet"
+            : swapStatus === 'processing' ? "Processing..."
+              : !canSwap ? "Insufficient balance"
+                : "Swap Tokens"}
         </Button>
       </div>
     </div>

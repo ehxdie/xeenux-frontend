@@ -3,7 +3,8 @@
 import { AdminOverview } from "@/components/admin/overview";
 import { AdminControls } from "@/components/admin/controls";
 import { useState } from "react";
-import { notification } from "@/utils/scaffold-eth";
+import { Header } from "@/components/header"; // Adjust the path as needed
+import { notification } from "@/utils/scaffold-eth/notification";
 
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,8 +24,8 @@ export default function AdminDashboard() {
   };
 
   return (
-    // <div className="min-h-screen bg-gradient-to-b from-[#12021c] to-[#1a0329]">
-    //   <Header />
+    <div className="min-h-screen bg-gradient-to-b from-[#12021c] to-[#1a0329]">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-8 gradient-text">
           Admin Dashboard
@@ -33,6 +34,6 @@ export default function AdminDashboard() {
         <AdminOverview />
         <AdminControls onAction={handleAction} isLoading={isLoading} />
       </div>
-    // </div>
+    </div>
   );
 }

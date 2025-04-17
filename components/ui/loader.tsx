@@ -1,6 +1,5 @@
 "use client";
 
-import { RainbowKitCustomConnectButton } from "../scaffold-eth";
 
 export function Loader() {
     return (
@@ -21,12 +20,7 @@ export function Loader() {
                 {/* Glow effect */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 to-cyan-500/20 rounded-full blur-xl animate-pulse" />
             </div>
-            <div className="flex flex-col gap-2 items-center justify-center">
-                <RainbowKitCustomConnectButton />
-                <a href="/" className="uppercase text-xs underline">
-                    go back
-                </a>
-            </div>
+           
         </div>
     );
 }

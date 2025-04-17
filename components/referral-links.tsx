@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Copy, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { notification } from "@/utils/scaffold-eth";
+import { notification } from "@/utils/scaffold-eth/notification";
 
 export function ReferralLinks({ userId }: { userId: number }) {
   const [leftLink, setLeftLink] = useState<string>("");

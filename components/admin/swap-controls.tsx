@@ -1,21 +1,26 @@
-import { Flame, Percent } from "lucide-react";
+import { Percent } from "lucide-react";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import {
-  useLastBurnDate,
-  useTokenInfo,
-  useTokensToBeBurnt,
-} from "@/hooks/use-contract";
 import { useState } from "react";
-import { bigIntToString } from "@/lib/utils";
-import { useSwapFee } from "@/hooks/use-swap";
+import { useSwapControls } from "@/hooks/use-swap-controls";
 
 export function SwapControls() {
-  const [isLoading, setIsLoading] = useState(false);
+  const { data, isLoading, updateSwapFee } = useSwapControls();
   const [newFee, setNewFee] = useState("");
-  const { data: swapFee } = useSwapFee();
-  const setNewSwapFee = () => {};
+
+  const handleSetNewSwapFee = async () => {
+    try {
+      await updateSwapFee(Number(newFee));
+      setNewFee("");
+    } catch (error) {
+      console.error("Failed to update swap fee:", error);
+    }
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Card className="glass-card p-6">
@@ -23,39 +28,17 @@ export function SwapControls() {
         <div className="p-2 rounded-lg bg-purple-500/20">
           <Percent className="w-5 h-5 text-purple-400" />
         </div>
-        <h2 className="text-xl font-semibold text-white">Swap Fee Controls</h2>
+        <h2 className="text-xl font-semibold text-white">
+          Swap Fee Controls
+        </h2>
       </div>
 
       <div className="space-y-6">
         <div>
           <label className="text-sm text-gray-400 mb-2 block">
-            Current Fee: {swapFee?.toString()}%
+            Current Fee: {data?.swapFee}%
           </label>
-          {/* <Slider
-            value={[swapFee]}
-            onValueChange={([value]) => setSwapFee(value)}
-            max={5}
-            step={0.1}
-            className="mb-6"
-          /> */}
         </div>
-
-        {/* <div className="flex gap-3">
-          {[0.5, 1, 2, 3].map((fee) => (
-            <Button
-              key={fee}
-              variant="outline"
-              className="flex-1 glass-input hover:bg-purple-500/20"
-              onClick={() => {
-                setSwapFee(fee);
-                onAction("setSwapFee", fee);
-              }}
-              disabled={isLoading}
-            >
-              {fee}%
-            </Button>
-          ))}
-        </div> */}
 
         <div className="flex gap-3">
           <Input
@@ -66,7 +49,7 @@ export function SwapControls() {
             className="glass-input"
           />
           <Button
-            onClick={setNewSwapFee}
+            onClick={handleSetNewSwapFee}
             disabled={isLoading || !newFee}
             className="bg-purple-600 hover:bg-purple-700"
           >
