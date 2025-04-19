@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 
 export default function UserLayout({
   children,
@@ -10,15 +12,23 @@ export default function UserLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    // If user is not authenticated, redirect to login
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       router.push("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  // If user is authenticated, show protected content
-  return isAuthenticated ? <>{children}</> : null;
+  if (isLoading) {
+    return <div>Loading...</div>; // Show a loading state while checking authentication
+  }
+
+  return (
+    <>
+      <Header />
+      {children}
+      <Footer />
+    </>
+  );
 }

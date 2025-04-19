@@ -5,6 +5,7 @@ import type { User } from '@/types/user';
 
 interface AuthContextType {
     isAuthenticated: boolean;
+    isLoading: boolean;
     user: User | null;
     token: string | null;
     login: (email: string, password: string) => Promise<void>;
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [token, setToken] = useState<string | null>(null);
 
@@ -27,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setToken(storedToken);
             setUser(JSON.parse(storedUser));
             setIsAuthenticated(true);
+            setIsLoading(false);
         }
     }, []);
 
@@ -58,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, isLoading, user, token, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

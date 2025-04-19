@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_BACKEND_API_URL, // Set in your .env.local
+    baseURL: process.env.NEXT_PUBLIC_BACKEND_API_URL,
 });
 
 // Register a new user
@@ -48,7 +48,7 @@ export const resetPassword = async (token: string, data: { password: string }) =
 // Update password (requires JWT)
 export const updatePassword = async (
     data: { currentPassword: string; newPassword: string },
-    
+
 ) => {
     const response = await apiClient.patch("/auth/update-password", data);
     return response.data;
