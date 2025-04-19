@@ -8,13 +8,9 @@ const apiClient = axios.create({
 // Query params: type, status, page, limit
 export const getMyTransactions = async (
     query: { type?: string; status?: string; page?: number; limit?: number },
-    token: string
 ) => {
     const response = await apiClient.get("/transactions", {
         params: { ...query },
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
     });
     return response.data;
 };
@@ -22,63 +18,40 @@ export const getMyTransactions = async (
 // Get Transaction by ID
 export const getTransactionById = async (
     transactionId: string,
-    token: string
 ) => {
-    const response = await apiClient.get(`/transactions/${transactionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiClient.get(`/transactions/${transactionId}`);
     return response.data;
 };
 
 // Deposit Tokens
 export const depositTokens = async (
     data: { amount: number; paymentMethod: string },
-    token: string
 ) => {
-    const response = await apiClient.post("/transactions/deposit", data, {
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-    });
+    const response = await apiClient.post("/transactions/deposit", data);
     return response.data;
 };
 
 // Request Withdrawal
 export const requestWithdrawal = async (
     data: { amount: number; walletAddress: string },
-    token: string
+
 ) => {
-    const response = await apiClient.post("/transactions/withdraw", data, {
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-    });
+    const response = await apiClient.post("/transactions/withdraw", data);
     return response.data;
 };
 
 // Get Transaction Stats
-export const getTransactionStats = async (token: string) => {
-    const response = await apiClient.get("/transactions/stats/summary", {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+export const getTransactionStats = async () => {
+    const response = await apiClient.get("/transactions/stats/summary");
     return response.data;
 };
 
 // Swap Tokens
 export const swapTokens = async (
     data: { amount: number; direction: string },
-    token: string
+   
 ) => {
-    const response = await apiClient.post("/transactions/swap", data, {
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-    });
+    const response = await apiClient.post("/transactions/swap", data);
     return response.data;
 };
 
@@ -88,8 +61,6 @@ export const confirmDeposit = async (data: {
     status: string;
     gatewayReference: string;
 }) => {
-    const response = await apiClient.post("/transactions/confirm-deposit", data, {
-        headers: { "Content-Type": "application/json" },
-    });
+    const response = await apiClient.post("/transactions/confirm-deposit", data);
     return response.data;
 };

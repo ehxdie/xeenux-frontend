@@ -165,7 +165,7 @@ export function usePurchasePackage() {
             setIsLoading(true);
             setError(null);
 
-            const response = await purchasePackage(data, token);
+            const response = await purchasePackage(data);
             const result = response as PurchasePackageResponse;
 
             setUserPackage(result.data.userPackage);

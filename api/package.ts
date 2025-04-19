@@ -19,10 +19,7 @@ export const getPackageDetails = async (packageId: number) => {
 // Purchase Package (requires JWT authentication)
 export const purchasePackage = async (
     data: { packageIndex: number; position: number },
-    token: string
 ) => {
-    const response = await apiClient.post("/packages/purchase", data, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiClient.post("/packages/purchase", data);
     return response.data;
 };

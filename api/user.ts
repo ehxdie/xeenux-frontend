@@ -5,50 +5,39 @@ const apiClient = axios.create({
 });
 
 // Get User Profile
-export const getUserProfile = async (token: string) => {
-    const response = await apiClient.get("/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+export const getUserProfile = async () => {
+    const response = await apiClient.get("/users/me");
     return response.data;
 };
 
 // Update User Profile
 export const updateUserProfile = async (
-    data: { name?: string; phone?: string; walletAddress?: string },
-    token: string
+    data: { name?: string; phone?: string; walletAddress?: string }
 ) => {
-    const response = await apiClient.patch("/users/me", data, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiClient.patch("/users/me", data);
     return response.data;
 };
 
 // Get Dashboard
-export const getDashboard = async (token: string) => {
-    const response = await apiClient.get("/users/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+export const getDashboard = async () => {
+    const response = await apiClient.get("/users/dashboard");
     return response.data;
 };
 
 // Get Binary Tree
-export const getBinaryTree = async (token: string) => {
-    const response = await apiClient.get("/users/binary-tree", {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+export const getBinaryTree = async () => {
+    const response = await apiClient.get("/users/binary-tree");
     return response.data;
 };
 
 // Get Team Members
 export const getTeamMembers = async (
-    teamId: number,
+    level: number,
     page: number,
     limit: number,
-    token: string
 ) => {
-    const response = await apiClient.get(`/users/team/${teamId}`, {
-        params: { page, limit },
-        headers: { Authorization: `Bearer ${token}` },
+    const response = await apiClient.get(`/users/team/${level}`, {
+        params: { page, limit }
     });
     return response.data;
 };
@@ -58,19 +47,15 @@ export const getActivities = async (
     type: number,
     page: number,
     limit: number,
-    token: string
 ) => {
     const response = await apiClient.get("/users/activities", {
-        params: { type, page, limit },
-        headers: { Authorization: `Bearer ${token}` },
+        params: { type, page, limit }
     });
     return response.data;
 };
 
 // Get User Packages
-export const getUserPackages = async (token: string) => {
-    const response = await apiClient.get("/users/packages", {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+export const getUserPackages = async () => {
+    const response = await apiClient.get("/users/packages");
     return response.data;
 };

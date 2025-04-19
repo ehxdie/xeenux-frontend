@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/auth-context';
 import {
     getDashboardStats,
     getSettings,
@@ -371,17 +370,15 @@ interface DeletePackageResponse {
 }
 
 export function useGetDashboardStats() {
-    const { token } = useAuth();
     const [data, setData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
     const fetchDashboardData = async () => {
-        if (!token) return;
 
         try {
             setIsLoading(true);
-            const response = await getDashboardStats(token);
+            const response = await getDashboardStats();
             setData(response.data);
             setError(null);
         } catch (err) {
@@ -392,10 +389,6 @@ export function useGetDashboardStats() {
             setIsLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchDashboardData();
-    }, [token]);
 
 
     return {
@@ -411,17 +404,16 @@ export function useGetDashboardStats() {
 }
 
 export function useGetSettings() {
-    const { token } = useAuth();
     const [settings, setSettings] = useState<SettingsState>({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
     const fetchSettings = async (group?: string) => {
-        if (!token) return;
+        
 
         try {
             setIsLoading(true);
-            const response = await getSettings(group || '', token);
+            const response = await getSettings(group || '');
 
             const settingsArray: SystemSetting[] = response.data.settings;
 
@@ -441,9 +433,6 @@ export function useGetSettings() {
         }
     };
 
-    useEffect(() => {
-        fetchSettings();
-    }, [token]);
 
     return {
         settings,
@@ -454,21 +443,17 @@ export function useGetSettings() {
 }
 
 export function useUpdateSetting() {
-    const { token } = useAuth();
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
     const updateSetting = async (data: UpdateSettingInput): Promise<SystemSetting | null> => {
-        if (!token) {
-            notification.error('Authentication required');
-            return null;
-        }
+        
 
         try {
             setIsUpdating(true);
             setError(null);
 
-            const response = await updateSettings(data, token);
+            const response = await updateSettings(data);
             const result = response as UpdateSettingResponse;
 
             notification.success('Setting updated successfully');
@@ -493,21 +478,17 @@ export function useUpdateSetting() {
 }
 
 export function useInitializeSettings() {
-    const { token } = useAuth();
     const [isInitializing, setIsInitializing] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
     const initializeSystemSettings = async (): Promise<InitializeSettingsResponse['data']['result'] | null> => {
-        if (!token) {
-            notification.error('Authentication required');
-            return null;
-        }
+        
 
         try {
             setIsInitializing(true);
             setError(null);
 
-            const response = await initializeSettings(token);
+            const response = await initializeSettings();
             const result = response as InitializeSettingsResponse;
 
             notification.success('System settings initialized successfully');
@@ -533,23 +514,19 @@ export function useInitializeSettings() {
 
 // Add the hook for searchUsers
 export function useSearchUsers() {
-    const { token } = useAuth();
     const [users, setUsers] = useState<UserSearchResult[]>([]);
     const [count, setCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
     const searchUser = async (query: string, field?: string): Promise<void> => {
-        if (!token) {
-            notification.error('Authentication required');
-            return;
-        }
+        
 
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await searchUsers(query, field || '', token);
+            const response = await searchUsers(query, field || '');
             const result = response as SearchUsersResponse;
 
             setUsers(result.data.users);
@@ -574,7 +551,6 @@ export function useSearchUsers() {
 }
 
 export function useGetUserTransactions() {
-    const { token } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -584,16 +560,12 @@ export function useGetUserTransactions() {
         userId: string,
         params: { type?: string; page?: number; limit?: number } = {}
     ): Promise<void> => {
-        if (!token) {
-            notification.error('Authentication required');
-            return;
-        }
-
+        
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await getUserTransactions(userId, params, token);
+            const response = await getUserTransactions(userId, params);
             const result = response as GetUserTransactionsResponse;
 
             setTransactions(result.data.transactions);
@@ -618,7 +590,6 @@ export function useGetUserTransactions() {
 }
 
 export function useGetUserActivities() {
-    const { token } = useAuth();
     const [activities, setActivities] = useState<Activity[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -628,16 +599,12 @@ export function useGetUserActivities() {
         userId: string,
         params: { type?: number; page?: number; limit?: number } = {}
     ): Promise<void> => {
-        if (!token) {
-            notification.error('Authentication required');
-            return;
-        }
-
+        
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await getUserActivities(userId, params, token);
+            const response = await getUserActivities(userId, params);
             const result = response as GetUserActivitiesResponse;
 
             setActivities(result.data.activities);
@@ -663,7 +630,6 @@ export function useGetUserActivities() {
 
 // Add the hook for addUserBalance
 export function useAddUserBalance() {
-    const { token } = useAuth();
     const [transaction, setTransaction] = useState<Transaction | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -671,16 +637,12 @@ export function useAddUserBalance() {
     const addUserBalanceHook = async (
         data: { userId: string; amount: number; type: string; description: string }
     ): Promise<void> => {
-        if (!token) {
-            notification.error('Authentication required');
-            return;
-        }
-
+        
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await addUserBalance(data, token);
+            const response = await addUserBalance(data);
             const result = response as AddUserBalanceResponse;
 
             setTransaction(result.data.transaction);
@@ -703,7 +665,6 @@ export function useAddUserBalance() {
 }
 
 export function useUpdateUserRank() {
-    const { token } = useAuth();
     const [updatedUser, setUpdatedUser] = useState<UpdateUserRankResponse['data']['user'] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -711,16 +672,13 @@ export function useUpdateUserRank() {
     const updateUserRankHook = async (
         data: { userId: string; rank: number }
     ): Promise<void> => {
-        if (!token) {
-            notification.error('Authentication required');
-            return;
-        }
+        
 
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await updateUserRank(data, token);
+            const response = await updateUserRank(data);
             const result = response as UpdateUserRankResponse;
 
             setUpdatedUser(result.data.user);
@@ -744,7 +702,6 @@ export function useUpdateUserRank() {
 
 // Add the hook for getRecentTransactions
 export function useGetRecentTransactions() {
-    const { token } = useAuth();
     const [transactions, setTransactions] = useState<RecentTransaction[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -753,18 +710,14 @@ export function useGetRecentTransactions() {
     const fetchRecentTransactions = async (
         params: { type?: string; status?: string; page?: number; limit?: number } = {}
     ): Promise<void> => {
-        if (!token) {
-            notification.error('Authentication required');
-            return;
-        }
+       
 
         try {
             setIsLoading(true);
             setError(null);
 
             const response = await getRecentTransactions(
-                { type: params.type || '', status: params.status || '', ...params },
-                token
+                { type: params.type || '', status: params.status || '', ...params }
             );
             const result = response as GetRecentTransactionsResponse;
 
@@ -791,22 +744,17 @@ export function useGetRecentTransactions() {
 
 // Hook for processScheduledTask
 export function useProcessScheduledTask() {
-    const { token } = useAuth();
     const [response, setResponse] = useState<ProcessScheduledTaskResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
     const processTask = async (task: string): Promise<void> => {
-        if (!token) {
-            notification.error("Authentication required");
-            return;
-        }
-
+        
         try {
             setIsLoading(true);
             setError(null);
 
-            const apiResponse = await processScheduledTask(task, token);
+            const apiResponse = await processScheduledTask(task);
             const result = apiResponse as ProcessScheduledTaskResponse;
 
             setResponse(result);
@@ -834,7 +782,6 @@ export function useProcessScheduledTask() {
 }
 
 export function useGetSystemLogs() {
-    const { token } = useAuth();
     const [logs, setLogs] = useState<SystemLog[]>([]);
     const [count, setCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -843,16 +790,12 @@ export function useGetSystemLogs() {
     const fetchSystemLogs = async (
         params: { page?: number; limit?: number } = {}
     ): Promise<void> => {
-        if (!token) {
-            notification.error("Authentication required");
-            return;
-        }
-
+        
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await getSystemLogs(params, token);
+            const response = await getSystemLogs(params);
             const result = response as GetSystemLogsResponse;
 
             setLogs(result.data.logs);
@@ -878,7 +821,7 @@ export function useGetSystemLogs() {
 
 // Hook for generateReport
 export function useGenerateReport() {
-    const { token } = useAuth();
+
     const [report, setReport] = useState<Report | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -886,16 +829,13 @@ export function useGenerateReport() {
     const fetchReport = async (
         data: { type: string; startDate: string; endDate: string }
     ): Promise<void> => {
-        if (!token) {
-            notification.error("Authentication required");
-            return;
-        }
+        
 
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await generateReport(data, token);
+            const response = await generateReport(data);
             const result = response as GenerateReportResponse;
 
             setReport(result.data.report);
@@ -920,7 +860,6 @@ export function useGenerateReport() {
 
 // Hook for processWithdrawal
 export function useProcessWithdrawal() {
-    const { token } = useAuth();
     const [transaction, setTransaction] = useState<Transaction | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -928,10 +867,7 @@ export function useProcessWithdrawal() {
     const processWithdrawalHook = async (
         data: { transactionId: string; status: string; remarks?: string }
     ): Promise<void> => {
-        if (!token) {
-            notification.error("Authentication required");
-            return;
-        }
+        
 
         try {
             setIsLoading(true);
@@ -939,7 +875,7 @@ export function useProcessWithdrawal() {
 
             const response = await processWithdrawal(
                 { ...data, remarks: data.remarks || '' },
-                token
+                
             );
             const result = response as ProcessWithdrawalResponse;
 
@@ -964,7 +900,6 @@ export function useProcessWithdrawal() {
 
 // Hook for createPackage
 export function useCreatePackage() {
-    const { token } = useAuth();
     const [createdPackage, setCreatedPackage] = useState<Package | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -979,16 +914,12 @@ export function useCreatePackage() {
             features: string[];
         }
     ): Promise<void> => {
-        if (!token) {
-            notification.error("Authentication required");
-            return;
-        }
-
+        
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await createPackage(data, token);
+            const response = await createPackage(data);
             const result = response as CreatePackageResponse;
 
             setCreatedPackage(result.data.package);
@@ -1012,7 +943,6 @@ export function useCreatePackage() {
 
 // Hook for updatePackage
 export function useUpdatePackage() {
-    const { token } = useAuth();
     const [updatedPackage, setUpdatedPackage] = useState<Package | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -1028,16 +958,12 @@ export function useUpdatePackage() {
             isActive?: boolean;
         }
     ): Promise<void> => {
-        if (!token) {
-            notification.error("Authentication required");
-            return;
-        }
-
+       
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await updatePackage(packageId, data, token);
+            const response = await updatePackage(packageId, data);
             const result = response as UpdatePackageResponse;
 
             setUpdatedPackage(result.data.package);
@@ -1061,22 +987,18 @@ export function useUpdatePackage() {
 
 // Hook for deletePackage
 export function useDeletePackage() {
-    const { token } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const [isDeleted, setIsDeleted] = useState(false);
 
     const deletePackageHook = async (packageId: number): Promise<void> => {
-        if (!token) {
-            notification.error("Authentication required");
-            return;
-        }
+        
 
         try {
             setIsLoading(true);
             setError(null);
 
-            const response = await deletePackage(packageId, token);
+            const response = await deletePackage(packageId);
             const result = response as DeletePackageResponse;
 
             if (result.status === "success") {

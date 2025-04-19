@@ -48,10 +48,8 @@ export const resetPassword = async (token: string, data: { password: string }) =
 // Update password (requires JWT)
 export const updatePassword = async (
     data: { currentPassword: string; newPassword: string },
-    token: string
+    
 ) => {
-    const response = await apiClient.patch("/auth/update-password", data, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiClient.patch("/auth/update-password", data);
     return response.data;
 };
